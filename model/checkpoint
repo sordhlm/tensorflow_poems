@@ -1,0 +1,6 @@
+model_checkpoint_path: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-48"
+all_model_checkpoint_paths: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-24"
+all_model_checkpoint_paths: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-30"
+all_model_checkpoint_paths: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-36"
+all_model_checkpoint_paths: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-42"
+all_model_checkpoint_paths: "/home/nvme/lhuang/14env/tensorflow/tensorflow_poems/model/poems-48"
