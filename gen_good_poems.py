@@ -28,11 +28,15 @@ class GoodPoem(Poem):
         self.output = 'ai_poems_'+time+'.txt'
         self.good_tone_th = 15
 
+    def gen_poem_manual(self):
+        poem = self.gen_poem(self.to_word_manual)
+        print(poem)
+
     def gen_poems(self, num = 1):
         i = 0
         with open(self.output, 'w') as fp:
             while i < num:
-                poem = self.gen_poem()
+                poem = self.gen_poem(self.to_word_auto)
                 if self.is_good_format(poem):
                     print("Good Poem ...")
                     print(poem)
@@ -85,7 +89,7 @@ class GoodPoem(Poem):
                 return 1
         return 0
 
-    def good_tone_judge(self. poem_tone, good_tone):
+    def good_tone_judge(self, poem_tone, good_tone):
         rate = 0
         for i in range(self.max_len):
             if good_tone[i]:
@@ -104,5 +108,6 @@ class GoodPoem(Poem):
 if __name__ == '__main__':
     begin_char = input('## please input the first character:')
     poem = GoodPoem(begin_char, '5jue')
-    poem.gen_poems(200)
+    #poem.gen_poems(1)
+    poem.gen_poem_manual()
     #pretty_print_poem(poem_=poem)

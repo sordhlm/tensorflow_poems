@@ -36,6 +36,12 @@ class Poem(object):
         self.input_data = tf.placeholder(tf.int32, [1, None])
         self.end_points = rnn_model(model='lstm', input_data=self.input_data, output_data=None, vocab_size=len(
             self.vocabs), rnn_size=128, num_layers=2, batch_size=64, learning_rate=self.lr)
+        self._parse_input()
+
+    def _parse_input(self):
+        self.input_word_len = len(self.begin_word)
+        #for i in range(self.input_word_len):
+        #    print(self.begin_word[i])
 
     def _rate_for_tone(self, tdst, tsrc):
         tsrc1 = tsrc[:-1]
@@ -68,7 +74,9 @@ class Poem(object):
 
         return new_predict/np.sum(new_predict)
 
-    def _to_word(self, predict, tone=None):
+    def to_word_auto(self, idx, predict, tone=None):
+        if idx < self.input_word_len:
+            return self.begin_word[idx]
         pdata = np.copy(predict[0])
         #print(predict)
         #print(np.sum(predict))
@@ -84,11 +92,48 @@ class Poem(object):
         else:
             return self.vocabs[sample]
 
-    def gen_poem(self):
+    def to_word_manual(self, idx, predict, tone=None):
+        if idx < self.input_word_len:
+            return self.begin_word[idx]
+        pdata = np.copy(predict[0])
+        #print(predict)
+        #print(np.sum(predict))
+        #print(len(predict))
+        pdata = self._predict_with_tone(pdata, tone)
+        most_predict = sorted(pdata)
+        most_predict.reverse()
+        like_words = ""
+        valid_idlist = []
+        for i in range(10):
+            idx = np.where(pdata == most_predict[i])
+            idx = list(idx[0])
+            if len(idx):
+                for i in idx:
+                    like_words += self._get_word(i)+"[%d] "%i
+                    valid_idlist.append(i)
+        print("Here is the most likely words:")
+        print("%s"%like_words)
+        want_char = input('Please select what you what use number:')
+        #tmp = predict.tolist()
+        #pdata /= np.sum(pdata)
+        if want_char.isdigit():
+            want_char = int(want_char)
+            if want_char in valid_idlist:
+                return self._get_word(want_char)
+        return self._get_word(np.random.choice(np.arange(len(pdata)), p=pdata))
+
+    def _get_word(self, idx):
+        if idx > len(self.vocabs):
+            return self.vocabs[-1]
+        else:
+            return self.vocabs[idx]
+
+
+    def gen_poem(self, word_select):
         batch_size = 1
         print('## loading corpus from %s' % self.model_dir)
 
-
+        to_word = word_select
         saver = tf.train.Saver(tf.global_variables())
         init_op = tf.group(tf.global_variables_initializer(), tf.local_variables_initializer())
         with tf.Session() as sess:
@@ -101,7 +146,9 @@ class Poem(object):
 
             [predict, last_state] = sess.run([self.end_points['prediction'], self.end_points['last_state']],
                                              feed_dict={self.input_data: x})
-            word = self.begin_word or self._to_word(predict)
+            word = to_word(0, predict)
+            #word = self.begin_word or predict_word
+            #print("begin_word: %s predict_word: %s select_word: %s"%(self.begin_word, pword, word))
             poem_ = ''
 
             i = 0
@@ -121,7 +168,7 @@ class Poem(object):
                 [predict, last_state] = sess.run([self.end_points['prediction'], self.end_points['last_state']],
                                                  feed_dict={self.input_data: x, self.end_points['initial_state']: last_state})
                 add_tone = tone if (i+2)%single_len == 0 else None
-                word = self._to_word(predict, add_tone)
+                word = to_word(i, predict, add_tone)
                 #print("idx[%d, %d], %s %s %s"%(i, single_len, word, pinyin(word,style=Style.FINALS_TONE3)[0][0], add_tone))
                 plist.append(word)
                 #print(single_len)
