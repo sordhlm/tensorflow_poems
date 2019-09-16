@@ -73,10 +73,16 @@ class Poem(object):
                 new_predict[i] += self._rate_for_tone(pword, tone)
 
         return new_predict/np.sum(new_predict)
+    def __is_word_define(self, idx):
+        if idx < self.input_word_len:
+            if self.is_chinese(self.begin_word[idx]):
+                return self.begin_word[idx]
+        return 0
 
     def to_word_auto(self, idx, predict, tone=None):
-        if idx < self.input_word_len:
-            return self.begin_word[idx]
+        ret = self.__is_word_define(idx)
+        if ret:
+            return ret
         pdata = np.copy(predict[0])
         #print(predict)
         #print(np.sum(predict))
@@ -93,8 +99,9 @@ class Poem(object):
             return self.vocabs[sample]
 
     def to_word_manual(self, idx, predict, tone=None):
-        if idx < self.input_word_len:
-            return self.begin_word[idx]
+        ret = self.__is_word_define(idx)
+        if ret:
+            return ret
         pdata = np.copy(predict[0])
         #print(predict)
         #print(np.sum(predict))
@@ -120,7 +127,14 @@ class Poem(object):
             want_char = int(want_char)
             if want_char in valid_idlist:
                 return self._get_word(want_char)
+        elif self.is_chinese(want_char):
+            return want_char
         return self._get_word(np.random.choice(np.arange(len(pdata)), p=pdata))
+
+    def is_chinese(self, word):
+        if word >= u'\u4e00' and word <= u'\u9fff':
+            return 1
+        return 0
 
     def _get_word(self, idx):
         if idx > len(self.vocabs):

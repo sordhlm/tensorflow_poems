@@ -18,7 +18,6 @@
 # ------------------------------------------------------------------------
 import collections
 import numpy as np
-from pypinyin import pinyin, Style
 
 start_token = 'B'
 end_token = 'E'
