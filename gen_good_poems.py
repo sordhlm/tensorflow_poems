@@ -16,17 +16,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ------------------------------------------------------------------------
-import datetime
+import datetime, time
+import threading
 from compose_poem import Poem
 from pypinyin import pinyin, Style
 
 class GoodPoem(Poem):
-    def __init__(self, s_word, format):
+    def __init__(self, s_word, format, thrd = 17):
         super(GoodPoem, self).__init__(s_word)
         self.format = format
         time = datetime.datetime.today().strftime('%Y%m%d_%H%M%S')
         self.output = 'ai_poems_'+time+'.txt'
-        self.good_tone_th = 17
+        self.good_tone_th = thrd
 
     def gen_poem_manual(self):
         poem = self.gen_poem(self.to_word_manual)
@@ -34,6 +35,7 @@ class GoodPoem(Poem):
 
     def gen_poems(self, num = 1):
         i = 0
+        poems = []
         while i < num:
             poem = self.gen_poem(self.to_word_auto)
             if self.is_good_format(poem):
@@ -42,6 +44,8 @@ class GoodPoem(Poem):
                 with open(self.output, 'a+') as fp:
                     fp.write(poem+"\n")
                 i += 1
+                poems.append(poem)
+        return poems
             #else:
             #    print("Bad Poem ...")
             #    print(poem)
@@ -52,13 +56,11 @@ class GoodPoem(Poem):
             split = 8
             length = 2
             good_tone = self.is_good_7jue_tone
-            self.good_tone_th = 24
         elif '5jue' in self.format:
             self.max_len = 24
             split = 6
             length = 2
             good_tone = self.is_good_5jue_tone
-            self.good_tone_th = 17
         elif '5lv' in self.format:
             self.max_len = 48
             split = 6
@@ -123,14 +125,64 @@ class GoodPoem(Poem):
         print("rate: %d"%rate)
         return (rate >= self.good_tone_th)
 
+class PoemGenerator(threading.Thread):
+    def __init__(self, init_char, p_type = "5jue", thrd = 17):
+        super(PoemGenerator, self).__init__()#注意：一定要显式的调用父类的初始化函数。
+        self.init_char = init_char
+        self.p_type = p_type
+        self.result = None
+        self.thrd = thrd
 
+    def get_result(self):
+        if self.isAlive():
+            return 0
+        else:
+            return self.result
 
+    def run(self):#定义每个线程要运行的函数
+        poem = GoodPoem(self.init_char, self.p_type, self.thrd)
+        self.result = poem.gen_poems(1)
+
+class PoemPool(object):
+    def __init__(self):
+        self.thread_pool = {}
+
+    def _get_unique_key(self):
+        pass
+
+    def add_generator(self, user, init_char, p_type, thrd):
+        if (user in self.thread_pool.keys()):
+            if self.thread_pool[user].isAlive():
+                return "You have already started generating Poem!"
+        self.thread_pool[user] = PoemGenerator(init_char, p_type, thrd)
+        self.thread_pool[user].start()
+        return ("%s, Start generating Poem!"%user)
+
+    def get_result(self, user):
+        return self.thread_pool[user].get_result()
 
 
 
 if __name__ == '__main__':
-    begin_char = input('## please input the first character:')
-    poem = GoodPoem(begin_char, '7jue')
-    poem.gen_poems(100)
+    #begin_char = input('## please input the first character:')
+    #poem = GoodPoem(begin_char, '5jue')
+    #ret = poem.gen_poems(1)
+    #print("%%%%%%")
+    #print(ret)
     #poem.gen_poem_manual()
+    poem = PoemPool()
+    #poem.start()
+    print("start poem")
+    while(True):
+        inp = input('please input user:')
+        [user, cmd] = inp.split()
+        if 'go' in cmd:
+            print(poem.add_generator(user, '月', '5jue', 12))
+        elif 'query' in cmd:
+            print(poem.get_result(user))
+        time.sleep(1)
+        #if not poem.isAlive():
+        #    break;
+    #print(poem.get_result())
     #pretty_print_poem(poem_=poem)
+
